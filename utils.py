@@ -1,17 +1,12 @@
+import numpy as np
 import torch
-from config import ATOM_EQUIV, ATOMS
-
-import torch
-from config import N
-from rdkit import Chem
-from rdkit.Chem import Draw
-
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.rdchem import BondType
-import numpy as np
 
-# Helper to convert Z to bond type
+from config import ATOM_EQUIV, ATOMS
+
+
 def get_bond_type(bond_vector):
     bond_types = [BondType.SINGLE, BondType.DOUBLE, BondType.TRIPLE, BondType.AROMATIC]
     idx = np.argmax(bond_vector)
@@ -19,18 +14,15 @@ def get_bond_type(bond_vector):
         return None
     return bond_types[idx]
 
+
 def build_molecule(A, Z, sanitize=True):
     """
-    Builds an RDKit molecule from MolGAN-style A and Z tensors (heavy atoms only).
-    Hydrogens are inferred by RDKit during sanitization.
-    
-    Args:
-        A (np.ndarray): shape (N, 5), one-hot encoded atom types (C, N, O, F, S)
-        Z (np.ndarray): shape (N, N, 4), one-hot bond types
-        sanitize (bool): if True, sanitize and infer Hs
+    From MolGAN molecules (A & Z) -> RDKIT.
+    Will be useful to check if a molecule is possible chemically, and draw.
+    Hydrogen atoms are inferred by rdkit. They are not in A nor Z.
 
-    Returns:
-        mol (Chem.Mol or None): RDKit molecule or None if invalid
+    Heavy atoms:    (C, N, O, F, S)
+
     """
     if isinstance(A, torch.Tensor):
         A = A.cpu().numpy()
@@ -59,7 +51,7 @@ def build_molecule(A, Z, sanitize=True):
                 try:
                     mol.AddBond(i, j, bond_type)
                 except Exception:
-                    pass  # invalid bond addition, skip
+                    pass
 
     if sanitize:
         try:
@@ -72,23 +64,26 @@ def build_molecule(A, Z, sanitize=True):
     else:
         return mol
 
+
 def check_valid(A, Z):
     mol = build_molecule(A, Z, sanitize=True)
     return mol is not None
+
 
 def draw(A, Z, filename="image.png"):
     mol = build_molecule(A, Z, sanitize=False)
     if mol:
         Draw.MolToFile(mol, filename)
 
-def print_mol(atoms : torch.Tensor):
+
+def print_mol(atoms: torch.Tensor):
     return [ATOM_EQUIV[index.item()] for index in atoms.squeeze()]
 
 
 # def repr_molecule(mol : torch_geometric.data.data.Data):
 #     print(f"Repr shape : {mol.z.size()[0]}x5")
 #     print(mol_equiv(mol.z))
-# 
+#
 #     links = {}
 #     for i, element in enumerate(mol.edge_index[0]):
 #         element = element.item()
@@ -96,6 +91,6 @@ def print_mol(atoms : torch.Tensor):
 #             links[element].append(mol.edge_index[1][i].item())
 #         else:
 #             links[element] = [mol.edge_index[1][i].item()]
-# 
+#
 #     for key, values in links.items():
 #         print(f"Atom {key} has links with {values}")

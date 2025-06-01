@@ -11,6 +11,7 @@ def load_data():
     raw_data = torch_geometric.datasets.QM9(root=os.getcwd())
     return raw_data
 
+
 def raw_to_AZ(mol: torch_geometric.data.data.Data):
     """Convert PyG molecular graph to (A, Z) format excluding hydrogens (atomic_num = 1)."""
 
@@ -31,7 +32,6 @@ def raw_to_AZ(mol: torch_geometric.data.data.Data):
         else:
             raise ValueError(f"Unsupported atom type: {atomic_num}")
 
-    # Z matrix
     Z = torch.zeros((n, n, Y))
     edge_index = mol.edge_index
     edge_attr = mol.edge_attr
@@ -44,39 +44,7 @@ def raw_to_AZ(mol: torch_geometric.data.data.Data):
             new_dst = index_map[dst]
             Z[new_src, new_dst] = edge_attr[i]
 
-    # Pad Z to (N, N, Y)
     Z_padded = torch.zeros((N, N, Y))
     Z_padded[:n, :n, :] = Z
 
     return A, Z_padded
-
-
-
-def raw_to_AZ2(mol: torch_geometric.data.data.Data):
-    """Raw data from torch geometric to paper format"""
-    atom_to_index = {6: 0, 7: 1, 8: 2, 9: 3, 16: 4}  # C N O F S
-    nodes = mol.z
-    n = nodes.shape[0]
-    A = torch.zeros((n, 5))
-
-    for row, i in enumerate(nodes):
-        if i.item() == 1:
-            continue
-        A[row][atom_to_index[i.item()]] = 1
-
-    edges = mol.edge_index
-    Z = torch.zeros((n, n, Y))
-    for i, atom_index in enumerate(edges[0]):
-        if atom_index.item() == 1:
-            continue
-        Z[atom_index][edges[1][i]] = mol.edge_attr[i]
-
-    # Pad A size NxT with zeros below and on the right
-    pad_rows = torch.zeros((N - n, T))
-    A = torch.cat([A, pad_rows], dim=0)
-    # Pad here Z size NxNxY
-    Z_padded = torch.zeros((N, N, Y))
-    Z_padded[:n, :n, :] = Z
-    Z = Z_padded
-
-    return A, Z

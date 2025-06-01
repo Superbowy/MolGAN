@@ -1,6 +1,5 @@
 from data import load_data, raw_to_AZ
-from utils import draw, check_valid, print_mol
-
+from utils import check_valid, draw, print_mol
 
 raw_data = load_data()
 print(print_mol(raw_data[10].z))
