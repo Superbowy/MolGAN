@@ -11,8 +11,8 @@ Y = 4  # nombre de types de liaison
 
 # TRAINING CONSTANTS
 NZ = 32  # Z size
-BATCH_SIZE = 2
-NUM_WORKERS = 0
+BATCH_SIZE = 32
+NUM_WORKERS = 4
 
 if torch.cuda.is_available():
     DEVICE = "cuda"
